@@ -3,6 +3,7 @@ stages: [test]
 hello:
   stage: test
   image: alpine:latest
+  tags: [docker-runner1]
   script:
     - echo "CI works on $(hostname)"
     - uname -a
