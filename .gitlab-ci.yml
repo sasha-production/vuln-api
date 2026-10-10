@@ -1,4 +1,7 @@
-test:
+stages: [test]
+
+test-job:
+  stage: test
   tags: [docker-runner1]
   script:
     - echo “Hello world!“
