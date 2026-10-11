@@ -3,6 +3,9 @@ stages:
   - build
   - push
 
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+
 test-job:
   stage: test
   tags: [docker-runner1]
@@ -34,14 +37,19 @@ test-job2:
   script:
     - echo “Hello world 222!“
 
-build-job:
+build-push-image:
   stage: build
+  image: docker:24
   before_script:
-    - echo "The job's stage is $'$CI_JOB_STAGE'"
+    - pwd
+    - ls
+    - cat Dockerfile
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
   script:
-    - echo "Build app ..."
-  after_script:
-    - echo "Builded app"
+    - docker build -t "$IMAGE_TAG" .
+    - docker tag "$IMAGE_TAG" "$CI_REGISTRY_IMAGE:latest"
+    - docker push "$IMAGE_TAG"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
 
 push-job:
   stage: push
