@@ -1,12 +1,53 @@
-stages: [test]
+stages: 
+  - test
+  - build
+  - push
 
-test-job1:
+test-job:
   stage: test
   tags: [docker-runner1]
+  before_script:
+    - echo "Before script in job"
+    - echo "CI_PROJECT_ID is - $CI_PROJECT_ID"
+    - echo "CI_COMMIT_SHA is $CI_COMMIT_SHA"
+    - echo "Create test data"
+    - pwd
+    - ls
+    - mkdir test_folder
+    - ls
   script:
     - echo “Hello world!“
+  after_script:
+    - ls
+    - echo "Delete test dir"
+    - rm -r test_folder
+    - ls
 
 test-job2:
   stage: test
+  before_script:
+    - echo "The job's stage is '$CI_JOB_STAGE'"
   script:
     - echo “Hello world 222!“
+
+build-job:
+  stage: build
+  before_script:
+    - echo "The job's stage is $'$CI_JOB_STAGE'"
+  script:
+    - echo "Build app ..."
+  after_script:
+    - echo "Builded app"
+
+push-job:
+  stage: push
+  before_script:
+    - echo "The GitLab API v4 root URL is $CI_API_V4_URL"
+    - echo "The top-level directory where builds are executed - $CI_BUILDS_DIR"
+  script:
+    - echo "Push app ..."
+  after_script:
+    - echo "The author of commit is '$CI_COMMIT_AUTHOR' to branch $CI_COMMIT_BRANCH"
+    - echo "The commit message is '$CI_COMMIT_MESSAGE'"
+    - echo "The job ID is '$CI_JOB_ID' and the name of the Docker image running the job is '$CI_JOB_IMAGE'"
+
