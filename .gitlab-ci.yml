@@ -17,6 +17,9 @@ test-job:
     - ls
   script:
     - echo “Hello world!“
+    - echo "Echo variables"
+    - echo "Visible variable is '$visible_variable'"
+    - echo "Masked variable is '$masked_variable'"
   after_script:
     - ls
     - echo "Delete test dir"
