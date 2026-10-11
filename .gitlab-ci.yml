@@ -20,6 +20,7 @@ test-job:
     - echo "Echo variables"
     - echo "Visible variable is '$visible_variable'"
     - echo "Masked variable is '$masked_variable'"
+    - echo "CI_REGISTRY is $CI_REGISTRY"
   after_script:
     - ls
     - echo "Delete test dir"
