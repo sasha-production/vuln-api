@@ -1,41 +1,65 @@
 stages: 
+  - lint
   - test
+  - sast
   - build
-  - push
+  - deploy
 
 variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
   IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
 
-test-job:
-  stage: test
-  tags: [docker-runner1]
+.python-base:
+  image: python:3.12
+  cache:
+    key: "pip-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .cache/pip
   before_script:
-    - echo "Before script in job"
-    - echo "CI_PROJECT_ID is - $CI_PROJECT_ID"
-    - echo "CI_COMMIT_SHA is $CI_COMMIT_SHA"
-    - echo "Create test data"
-    - pwd
-    - ls
-    - mkdir test_folder
-    - ls
-  script:
-    - echo “Hello world!“
-    - echo "Echo variables"
-    - echo "Visible variable is '$visible_variable'"
-    - echo "Masked variable is '$masked_variable'"
-    - echo "CI_REGISTRY is $CI_REGISTRY"
-  after_script:
-    - ls
-    - echo "Delete test dir"
-    - rm -r test_folder
-    - ls
+    - python --version
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
 
-test-job2:
-  stage: test
+lint-job:
+  extends: .python-base
+  stage: lint
   before_script:
-    - echo "The job's stage is '$CI_JOB_STAGE'"
+    - echo "Start linting"
   script:
-    - echo “Hello world 222!“
+    - pip install ruff
+    - ruff check app tests
+
+
+test:
+  extends: .python-base
+  stage: test
+  script:
+    - pytest --junitxml=report.xml
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
+    paths:
+      - report.xml
+    expire_in: 1 week
+
+# ---------- sast ----------
+
+# Официальный шаблон SAST (в CE работает)
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+# Переопределяем, чтобы запускалось только на push и не на каждый MR-пайплайн
+semgrep-sast:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
+secret_detection:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
 
 build-push-image:
   stage: build
@@ -47,19 +71,38 @@ build-push-image:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
   script:
     - docker build -t "$IMAGE_TAG" .
-    - docker tag "$IMAGE_TAG" "$CI_REGISTRY_IMAGE:latest"
+    #- docker tag "$IMAGE_TAG" "$CI_REGISTRY_IMAGE:latest"
     - docker push "$IMAGE_TAG"
-    - docker push "$CI_REGISTRY_IMAGE:latest"
+    #- docker push "$CI_REGISTRY_IMAGE:latest"
 
-push-job:
-  stage: push
+# ---------- deploy ----------
+
+deploy:
+  stage: deploy
+  image: docker:24
+  needs: [build-image]
+  variables:
+    APP_NAME: "vuln-api"
+    HOST_PORT: "8000"
   before_script:
-    - echo "The GitLab API v4 root URL is $CI_API_V4_URL"
-    - echo "The top-level directory where builds are executed - $CI_BUILDS_DIR"
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
   script:
-    - echo "Push app ..."
+    - docker pull "$IMAGE_TAG"
+    - docker rm -f "$APP_NAME" || true
+    - >
+      docker run -d
+      --name "$APP_NAME"
+      --restart always
+      -p "$HOST_PORT:8000"
+      "$IMAGE_TAG"
+    - sleep 3
+    - docker ps --filter "name=$APP_NAME"
   after_script:
-    - echo "The author of commit is '$CI_COMMIT_AUTHOR' to branch $CI_COMMIT_BRANCH"
-    - echo "The commit message is '$CI_COMMIT_MESSAGE'"
-    - echo "The job ID is '$CI_JOB_ID' and the name of the Docker image running the job is '$CI_JOB_IMAGE'"
+    - docker ps --filter "name=$APP_NAME"
+  environment:
+    name: production
+    url: http://192.168.0.128:8000
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
 
