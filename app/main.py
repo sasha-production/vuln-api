@@ -35,4 +35,4 @@ def health():
 
 @app.get("/")
 def root():
-    return {"name": "Vuln Notes API", "docs": "/docs"}
+    return {"name": "Vuln Notes API v2", "docs": "/docs"}
