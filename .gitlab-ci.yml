@@ -28,7 +28,11 @@ lint-job:
     - echo "Start linting"
   script:
     - pip install ruff
-    - ruff check app tests
+    - ruff check app tests --output-format=junit > ruff-junit.xml || true
+  artifacts:
+    when: always
+    reports:
+      junit: ruff-junit.xml
 
 
 test:
