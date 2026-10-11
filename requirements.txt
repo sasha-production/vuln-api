@@ -7,6 +7,10 @@ python-jose==3.2.0
 passlib==1.7.4
 python-multipart==0.0.5
 pyyaml==5.3.1
-requests==2.19.1
+requests==2.31.0
 jinja2==2.11.2
 pydantic[email]
+urllib3==1.26.20
+pytest
+httpx
+six==1.16.0
