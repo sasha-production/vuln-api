@@ -6,7 +6,7 @@ test-job1:
   script:
     - echo “Hello world!“
 
-test-job1:
+test-job2:
   stage: test
   script:
     - echo “Hello world 222!“
