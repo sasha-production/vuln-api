@@ -1,7 +1,12 @@
 stages: [test]
 
-test-job:
+test-job1:
   stage: test
   tags: [docker-runner1]
   script:
     - echo “Hello world!“
+
+test-job1:
+  stage: test
+  script:
+    - echo “Hello world 222!“
