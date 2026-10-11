@@ -80,7 +80,6 @@ build-push-image:
 deploy:
   stage: deploy
   image: docker:24
-  needs: [build-image]
   variables:
     APP_NAME: "vuln-api"
     HOST_PORT: "8000"
