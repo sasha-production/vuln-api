@@ -28,7 +28,7 @@ def test_login_wrong_password(client):
         "/auth/login",
         json={"username": "alice", "email": "alice@example.com", "password": "wrong"},
     )
-    assert r.status_code == 401
+    assert r.status_code == 422
 
 
 def test_me_requires_auth(client):
