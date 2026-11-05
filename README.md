@@ -1,6 +1,6 @@
 # Vuln Notes API
 
-Учебный FastAPI-проект с намеренными уязвимостями для практики SAST/SCA/DAST.
+FastAPI-проект с намеренными уязвимостями для практики SAST/SCA/DAST.
 
 ## Запуск
     pip install -r requirements.txt
